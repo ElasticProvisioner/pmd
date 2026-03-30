@@ -20,10 +20,9 @@ class KotlinParserThisReceiverTest {
 
     @Test
     void testThisReceiverLabels() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/ThisReceiver.kt");
+        KotlinParsingHelper kotlinParsingHelper = KotlinParsingHelper.DEFAULT.withResourceContext(getClass());
 
-        // Parse using KotlinParsingHelper
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/ThisReceiver.kt");
 
         assertNotNull(root);
 

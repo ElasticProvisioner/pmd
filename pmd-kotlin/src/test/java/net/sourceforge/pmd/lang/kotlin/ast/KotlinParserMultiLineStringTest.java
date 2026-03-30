@@ -22,12 +22,12 @@ import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringLiteral
  */
 class KotlinParserMultiLineStringTest {
 
+    // assume that KotlinParsingHelper is thread safe to use in parallel tests
+    private final KotlinParsingHelper kotlinParsingHelper = KotlinParsingHelper.DEFAULT.withResourceContext(getClass());
+
     @Test
     void testMultiLineStringRefs() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringRefs.kt");
-
-        // Parse using KotlinParsingHelper
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringRefs.kt");
 
         // In this grammar, `$identifier` (and multi-dollar variants like `$$$productName`) are represented
         // as `MultiLineStrRef` tokens inside `KtMultiLineStringContent`. `KtMultiLineStringExpression` is
@@ -44,10 +44,7 @@ class KotlinParserMultiLineStringTest {
 
     @Test
     void testMultiLineStringExpressions() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringExpressions.kt");
-
-        // Parse using KotlinParsingHelper
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringExpressions.kt");
 
         // In this grammar, `$identifier` (and multi-dollar variants like `$$$productName`) are represented
         // as `MultiLineStrRef` tokens inside `KtMultiLineStringContent`. `KtMultiLineStringExpression` is
@@ -70,9 +67,7 @@ class KotlinParserMultiLineStringTest {
 
     @Test
     void testSingleDollarRefWithoutPrefix() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/SingleDollarRefNoPrefix.kt");
-
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/SingleDollarRefNoPrefix.kt");
 
         // In plain strings, `$myRef` is a LineStrRef. In raw multi-line strings without multi-dollar
         // prefix, `$myRef` is also a MultiLineStrRef.
@@ -85,9 +80,7 @@ class KotlinParserMultiLineStringTest {
 
     @Test
     void testMultiDollarRefSplitting() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringRefSplitting.kt");
-
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringRefSplitting.kt");
 
         // In a `$$$"""` raw string, `$$$$myRef` should be tokenized as:
         // - one literal '$' (text)
@@ -102,9 +95,7 @@ class KotlinParserMultiLineStringTest {
 
     @Test
     void testMultiDollarExpressionSplitting() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringExprSplitting.kt");
-
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringExprSplitting.kt");
 
         // In a `$$$"""` raw string, `$$$$${...}` should be tokenized as:
         // - one literal '$' (text)
@@ -118,9 +109,7 @@ class KotlinParserMultiLineStringTest {
 
     @Test
     void testSingleDollarExpressionWithoutPrefix() {
-        String code = KotlinParsingHelper.readResourcePath("net/sourceforge/pmd/lang/kotlin/ast/testdata/SingleDollarExprNoPrefix.kt");
-
-        KtKotlinFile root = KotlinParsingHelper.parseAndAssertNoStderr(code);
+        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/SingleDollarExprNoPrefix.kt");
 
         long lineExprStartCount = findTerminalNodes(root, KotlinParser.LineStrExprStart).count();
 
