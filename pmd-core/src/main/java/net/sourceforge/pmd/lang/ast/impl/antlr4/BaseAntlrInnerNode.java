@@ -162,11 +162,8 @@ public abstract class BaseAntlrInnerNode<N extends AntlrNode<N>> extends BaseAnt
             // ParserRuleContext#toString() prints a list of ATN state numbers like "[441 424 315]".
             // That is hard to interpret when this adapter leaks into logs/debug views.
             // Delegate to the PMD node's toString() which we can customize per language.
-            try {
-                return String.valueOf(pmdNode);
-            } catch (Exception e) {
-                return super.toString();
-            }
+            String s = String.valueOf(pmdNode);
+            return s.startsWith("!debug only!") ? s : "!debug only! " + s;
         }
     }
 }
