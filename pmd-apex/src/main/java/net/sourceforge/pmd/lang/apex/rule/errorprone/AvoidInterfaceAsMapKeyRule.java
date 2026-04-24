@@ -121,6 +121,9 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
      * those relationships for efficient lookup.
      */
     private static final class TypeHierarchyIndex {
+        private static final String NATURE_INTERFACE = "interface";
+        private static final String NATURE_CLASS = "class";
+
         // TypeSummary lookup by simple name (lowercase) - for resolving type references
         private final Map<String, Set<TypeSummary>> typesBySimpleName = new HashMap<>();
         // TypeSummary lookup by full name (lowercase) - for qualified references
@@ -147,7 +150,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
                 typesBySimpleName.computeIfAbsent(simpleName, k -> new HashSet<>()).add(summary);
                 typesByFullName.put(fullName, summary);
 
-                if ("interface".equalsIgnoreCase(nature)) {
+                if (NATURE_INTERFACE.equalsIgnoreCase(nature)) {
                     interfaces.put(fullName, summary);
                     // Track interface inheritance
                     scala.collection.Iterator<TypeName> superIfaces = summary.interfaces().iterator();
@@ -156,7 +159,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
                         interfaceToSubInterfaces.computeIfAbsent(superIfaceName, k -> new HashSet<>())
                                 .add(summary);
                     }
-                } else if ("class".equalsIgnoreCase(nature)) {
+                } else if (NATURE_CLASS.equalsIgnoreCase(nature)) {
                     classes.put(fullName, summary);
                     // Index by superclass for subclass lookup
                     scala.Option<TypeName> superOpt = summary.superClass();
@@ -218,7 +221,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
             // Find all classes and check their hierarchies
             for (Set<TypeSummary> types : typesBySimpleName.values()) {
                 for (TypeSummary type : types) {
-                    if (!"class".equalsIgnoreCase(type.nature())) {
+                    if (!NATURE_CLASS.equalsIgnoreCase(type.nature())) {
                         continue;
                     }
                     if (classImplementsInterface(type, ifaceName, new HashSet<>())) {
@@ -263,7 +266,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
                 Set<TypeSummary> directIfaceTypes = typesBySimpleName.get(directIface);
                 if (directIfaceTypes != null) {
                     for (TypeSummary directIfaceType : directIfaceTypes) {
-                        if ("interface".equalsIgnoreCase(directIfaceType.nature())
+                        if (NATURE_INTERFACE.equalsIgnoreCase(directIfaceType.nature())
                                 && interfaceExtendsInterface(directIfaceType, ifaceName, new HashSet<>())) {
                             return true;
                         }
@@ -278,7 +281,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
                 Set<TypeSummary> superTypes = typesBySimpleName.get(superName);
                 if (superTypes != null) {
                     for (TypeSummary superType : superTypes) {
-                        if ("class".equalsIgnoreCase(superType.nature())
+                        if (NATURE_CLASS.equalsIgnoreCase(superType.nature())
                                 && classImplementsInterface(superType, ifaceName, visited)) {
                             return true;
                         }
@@ -307,7 +310,7 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
                 Set<TypeSummary> superIfaceTypes = typesBySimpleName.get(superIfaceName);
                 if (superIfaceTypes != null) {
                     for (TypeSummary superIfaceType : superIfaceTypes) {
-                        if ("interface".equalsIgnoreCase(superIfaceType.nature())
+                        if (NATURE_INTERFACE.equalsIgnoreCase(superIfaceType.nature())
                                 && interfaceExtendsInterface(superIfaceType, targetIfaceName, visited)) {
                             return true;
                         }

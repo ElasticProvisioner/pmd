@@ -4,33 +4,19 @@
 
 package net.sourceforge.pmd.lang.apex.rule.errorprone;
 
+import static net.sourceforge.pmd.lang.apex.multifile.ApexMultifileTestSupport.assertViolation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import net.sourceforge.pmd.PMDConfiguration;
-import net.sourceforge.pmd.PmdAnalysis;
-import net.sourceforge.pmd.lang.Language;
-import net.sourceforge.pmd.lang.LanguageVersion;
-import net.sourceforge.pmd.lang.apex.ApexLanguageModule;
-import net.sourceforge.pmd.lang.apex.ApexLanguageProperties;
-import net.sourceforge.pmd.lang.rule.Rule;
-import net.sourceforge.pmd.lang.rule.RuleSet;
-import net.sourceforge.pmd.lang.rule.RuleSetLoader;
-import net.sourceforge.pmd.reporting.GlobalAnalysisListener;
+import net.sourceforge.pmd.lang.apex.multifile.ApexMultifileTestSupport;
 import net.sourceforge.pmd.reporting.Report;
-import net.sourceforge.pmd.reporting.RuleViolation;
 import net.sourceforge.pmd.test.PmdRuleTst;
-
-import com.nawforce.pkgforce.path.PathLike;
-import com.nawforce.runtime.platform.Environment;
-import scala.Option;
 
 /**
  * Tests for AvoidInterfaceAsMapKey rule. Extends PmdRuleTst for XML-based tests
@@ -53,9 +39,6 @@ class AvoidInterfaceAsMapKeyTest extends PmdRuleTst {
         Report report = runRule(Paths.get(TEST_RESOURCES_BASE + "project1"));
 
         assertEquals(3, report.getViolations().size(), "Expected 3 violations in MapUser.cls");
-        for (RuleViolation v : report.getViolations()) {
-            assertEquals("MapUser.cls", v.getFileId().getFileName());
-        }
         assertViolation(report.getViolations().get(0), "MapUser.cls", 7);  // field
         assertViolation(report.getViolations().get(1), "MapUser.cls", 10); // parameter
         assertViolation(report.getViolations().get(2), "MapUser.cls", 15); // local variable
@@ -158,34 +141,7 @@ class AvoidInterfaceAsMapKeyTest extends PmdRuleTst {
         assertViolation(report.getViolations().get(0), "MapUser.cls", 4);
     }
 
-    private void assertViolation(RuleViolation violation, String fileName, int lineNumber) {
-        assertEquals(fileName, violation.getFileId().getFileName());
-        assertEquals(lineNumber, violation.getBeginLine());
-    }
-
     private Report runRule(Path testProjectDir) throws IOException {
-        Option<PathLike> pathLikeOption = Option.apply(new com.nawforce.runtime.platform.Path(tempDir));
-        Option<Option<PathLike>> cacheDirOption = Option.apply(pathLikeOption);
-        Environment.setCacheDirOverride(cacheDirOption);
-
-        Language apexLanguage = ApexLanguageModule.getInstance();
-        LanguageVersion languageVersion = apexLanguage.getDefaultVersion();
-        PMDConfiguration configuration = new PMDConfiguration();
-        configuration.setIgnoreIncrementalAnalysis(true);
-        configuration.setDefaultLanguageVersion(languageVersion);
-        configuration.setThreads(0); // don't use separate threads
-
-        configuration.getLanguageProperties(apexLanguage)
-                .setProperty(ApexLanguageProperties.MULTIFILE_DIRECTORY, Optional.of(testProjectDir.toString()));
-
-        RuleSet parsedRset = new RuleSetLoader().warnDeprecated(false).loadFromResource("category/apex/errorprone.xml");
-        Rule rule = parsedRset.getRuleByName("AvoidInterfaceAsMapKey");
-
-        try (PmdAnalysis pmd = PmdAnalysis.create(configuration)) {
-            pmd.files().addDirectory(testProjectDir);
-            pmd.addRuleSet(RuleSet.forSingleRule(rule));
-            pmd.addListener(GlobalAnalysisListener.exceptionThrower());
-            return pmd.performAnalysisAndCollectReport();
-        }
+        return ApexMultifileTestSupport.runRule(tempDir, testProjectDir, "errorprone", "AvoidInterfaceAsMapKey");
     }
 }
