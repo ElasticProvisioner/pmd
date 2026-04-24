@@ -44,6 +44,8 @@ public final class ApexMultifileAnalysis {
     // test only
     static final Logger LOG = LoggerFactory.getLogger(ApexMultifileAnalysis.class);
 
+    private boolean warnedAboutMissingOrg = false;
+
     // Create a new org for each analysis
     // Null if failed.
     private final @Nullable Org org;
@@ -100,7 +102,7 @@ public final class ApexMultifileAnalysis {
             // com.nawforce.apexlink.types.platform.PlatformTypeDeclaration we get a ExceptionInInitializerError
             // and later NoClassDefFoundErrors, because PlatformTypeDeclaration couldn't be loaded.
             LOG.error("Exception while initializing Apexlink ({})", e.getMessage(), e);
-            LOG.error("PMD will not attempt to initialize Apexlink further, this can cause rules like UnusedMethod to be dysfunctional");
+            LOG.error("PMD will not attempt to initialize Apexlink further, this can cause rules like UnusedMethod and AvoidInterfaceAsMapKey to be dysfunctional");
         }
         this.org = org;
     }
@@ -115,7 +117,16 @@ public final class ApexMultifileAnalysis {
         return org == null;
     }
 
+    private void maybeWarnAboutMissingOrg() {
+        if (isFailed() && !warnedAboutMissingOrg) {
+            warnedAboutMissingOrg = true;
+            LOG.warn("Multifile analysis unavailable. "
+                    + "Set PMD_APEX_ROOT_DIRECTORY to enable cross-file type resolution.");
+        }
+    }
+
     public List<Issue> getFileIssues(String filename) {
+        maybeWarnAboutMissingOrg();
         // Extract issues for a specific metadata file from the org
         return org == null ? Collections.emptyList()
                            : Collections.unmodifiableList(Arrays.asList(org.issues().issuesForFile(filename)));
@@ -125,8 +136,10 @@ public final class ApexMultifileAnalysis {
      * Returns an unmodifiable list of all type summaries in the org.
      * Returns an empty list when multifile analysis is unavailable.
      * This enables rules to perform complex cross-type analysis.
+     * @since 7.24.0
      */
     public List<TypeSummary> getTypeSummaries() {
+        maybeWarnAboutMissingOrg();
         return getAllTypeSummaries();
     }
 

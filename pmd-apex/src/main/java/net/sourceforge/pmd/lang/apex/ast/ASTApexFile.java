@@ -19,6 +19,7 @@ import net.sourceforge.pmd.lang.document.TextRegion;
 import net.sourceforge.pmd.reporting.ViolationSuppressor.SuppressionCommentWrapper;
 
 import com.google.summit.ast.CompilationUnit;
+import com.nawforce.apexlink.api.TypeSummary;
 import io.github.apexdevtools.api.Issue;
 
 public final class ASTApexFile extends AbstractApexNode.Single<CompilationUnit> implements RootNode {
@@ -61,8 +62,14 @@ public final class ASTApexFile extends AbstractApexNode.Single<CompilationUnit> 
         return multifileAnalysis.getFileIssues(fileId.getAbsolutePath());
     }
 
-    public @NonNull ApexMultifileAnalysis getMultifileAnalysis() {
-        return multifileAnalysis;
+    /**
+     * Returns an unmodifiable list of all type summaries in the org.
+     * Returns an empty list when multifile analysis is unavailable.
+     * This enables rules to perform complex cross-type analysis.
+     * @since 7.24.0
+     */
+    public @NonNull List<TypeSummary> getTypeSummaries() {
+        return multifileAnalysis.getTypeSummaries();
     }
 
     @Override

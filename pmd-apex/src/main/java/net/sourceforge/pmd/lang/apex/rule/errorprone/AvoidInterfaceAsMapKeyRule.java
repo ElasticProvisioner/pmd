@@ -13,15 +13,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.sourceforge.pmd.lang.apex.ast.ASTApexFile;
 import net.sourceforge.pmd.lang.apex.ast.ASTFieldDeclarationStatements;
 import net.sourceforge.pmd.lang.apex.ast.ASTParameter;
 import net.sourceforge.pmd.lang.apex.ast.ASTVariableDeclaration;
 import net.sourceforge.pmd.lang.apex.ast.ApexNode;
-import net.sourceforge.pmd.lang.apex.multifile.ApexMultifileAnalysis;
 import net.sourceforge.pmd.lang.apex.rule.AbstractApexRule;
 import net.sourceforge.pmd.lang.apex.rule.internal.Helper;
 import net.sourceforge.pmd.lang.rule.RuleTargetSelector;
@@ -41,13 +38,10 @@ import com.nawforce.pkgforce.names.TypeName;
  * to the root of your SFDX project (where {@code sfdx-project.json} lives). Without it the
  * rule produces no violations.
  *
- * @see <a href="https://github.com/pmd/pmd/issues/6492">Issue 6492</a>
+ * @see <a href="https://github.com/pmd/pmd/issues/6492">[apex] New rule: Prevent use of interface -> abstract class with equals/hashCode as key in Map #6492</a>
+ * @since 7.24.0
  */
 public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AvoidInterfaceAsMapKeyRule.class);
-    private static boolean warnedAboutMissingOrg = false;
-
     // Cached index - computed once per PMD run, reused across all file visits
     private TypeHierarchyIndex cachedIndex;
 
@@ -58,18 +52,8 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
 
     @Override
     public Object visit(ASTApexFile node, Object data) {
-        ApexMultifileAnalysis mfa = node.getMultifileAnalysis();
-        if (mfa.isFailed()) {
-            if (!warnedAboutMissingOrg) {
-                warnedAboutMissingOrg = true;
-                LOG.warn("AvoidInterfaceAsMapKey rule not enforced: multifile analysis unavailable. "
-                        + "Set PMD_APEX_ROOT_DIRECTORY to enable cross-file type resolution.");
-            }
-            return data;
-        }
-
         // Build index once per run (lazily on first file visit)
-        TypeHierarchyIndex index = getOrCreateIndex(mfa);
+        TypeHierarchyIndex index = getOrCreateIndex(node.getTypeSummaries());
         for (MapKeyUsage usage : collectMapKeyUsages(node)) {
             if (index.isProblematicInterfaceKey(usage.keyTypeName)) {
                 asCtx(data).addViolation(usage.reportNode);
@@ -78,9 +62,9 @@ public class AvoidInterfaceAsMapKeyRule extends AbstractApexRule {
         return data;
     }
 
-    private TypeHierarchyIndex getOrCreateIndex(ApexMultifileAnalysis mfa) {
+    private TypeHierarchyIndex getOrCreateIndex(List<TypeSummary> typeSummaries) {
         if (cachedIndex == null) {
-            cachedIndex = new TypeHierarchyIndex(mfa.getTypeSummaries());
+            cachedIndex = new TypeHierarchyIndex(typeSummaries);
         }
         return cachedIndex;
     }
